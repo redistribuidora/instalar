@@ -17,3 +17,5 @@ composer.json
 }
 composer install
 composer dump-autoload
+
+php composer.phar create-project doctrine/orm path "2.2.*"
