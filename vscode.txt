@@ -1,0 +1,8 @@
+settings.json
+{
+    "terminal.integrated.shell.windows": "C:\\Works\\Git\\bin\\bash.exe",
+    "git.autofetch": true,
+    "php.validate.executablePath": "D:/web/php/php.exe",
+    "php.executablePath": "D:/web/php/php.exe",
+}
+EXTENSIONS
