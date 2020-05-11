@@ -1,0 +1,14 @@
+https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/
+cd /home/tu-usuario/Downloads
+chmod 755 xampp-linux-x64-7.3.1-0-installer.run
+ls -l xampp-linux-x64-7.3.1-0-installer.run
+sudo ./xampp-linux-x64-7.3.1-0-installer.run
+sudo /opt/lampp/lampp start
+sudo /opt/lampp/lampp stop
+sudo /opt/lampp/lampp restart
+http://localhost/xampp/
+sudo nano /etc/rc.local
+/opt/lampp/lampp start
+ctrl+0
+ctrl+x
+sudo /opt/lampp/lampp security
