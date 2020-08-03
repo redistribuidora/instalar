@@ -1,3 +1,8 @@
+---------
+LINUX SSL
+---------
+https://www.syloper.com/blog/servidores/xampp-certificados-ssl-localhost/
+
 wget https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/7.4.8/xampp-linux-x64-7.4.8-0-installer.run/download
 
 chmod 755 xampp-linux-x64-7.4.8-0-installer.run
@@ -8,7 +13,7 @@ sudo /opt/lampp/lampp start
 
 sudo nano /etc/rc.local
 /opt/lampp/lampp start
-ctrl+0
+ctrl+o
 ctrl+x
 
 sudo /opt/lampp/lampp security
@@ -41,3 +46,87 @@ chrome://settings/certificates
 localhostRootCA.pem
 
 sudo /opt/lampp/lampp restart
+
+-----------
+WINDOWS SSL
+-----------
+https://www.semsoft-peru.com/page/virtual_host_y_ssl_en_xampp.html
+
+md C:/xampp/apache/conf/certificados
+cd C:/xampp/apache/conf/certificados
+
+C:/xampp/apache/conf/certificados/crear.conf
+[ca]
+copy_extensions = copy
+[req]
+prompt = no
+default_bits = 2048
+default_keyfile = websem.key
+encrypt_key = no
+distinguished_name = req_distinguished_name
+string_mask = utf8only
+req_extensions = v3_req
+x509_extensions	= v3_ca
+[v3_ca]
+subjectAltName = @alternate_names
+keyUsage = digitalSignature, keyEncipherment
+[req_distinguished_name]
+C=PE
+ST=Arequipa
+L=Arequipa
+O=Sem Soft Peru
+OU=WebSite Developers
+CN=*.web.sem
+emailAddress=semsof@semsoft-peru.com
+[v3_req]
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
+[alternate_names]
+DNS.1 = www.web.sem
+DNS.2 = test.web.sem
+ 
+openssl req -out intranet.csr -newkey rsa:2048 -nodes -keyout intranet.key -config C:/xampp/apache/conf/certificados/crear.conf
+openssl req -new -x509 -key intranet.key -sha256 -out intranet.crt -days 365 -config C:/xampp/apache/conf/certificados/crear.conf
+openssl x509 -in intranet.crt -text -noout
+
+-------------------
+WINDOWS VIRTUALHOST
+-------------------
+Bloc de notas (administrador)
+
+C:\Windows\System32\drivers\etc\hosts
+127.0.0.1 intranet.local
+
+C:\web\apache\conf\extra\httpd-vhosts.conf
+<VirtualHost *:80>
+ DocumentRoot "C:\web\htdocs"
+ ServerName localhost
+ <Directory "C:\web\htdocs">
+  Options Indexes FollowSymLinks Includes ExecCGI
+  AllowOverride All
+  Require all granted
+ </Directory>
+</VirtualHost>
+
+<VirtualHost intranet.local:80>
+ DocumentRoot "C:\webs\intranet_101\public_html"
+ ServerName intranet.local
+ <Directory "C:\webs\intranet_101">
+  Options Indexes FollowSymLinks Includes ExecCGI
+  AllowOverride All
+  Require all granted
+ </Directory>
+</VirtualHost>
+
+<VirtualHost intranet.local:443>
+ DocumentRoot "C:\webs\intranet_101\public_html"
+ ServerName intranet.local
+ <Directory "C:\webs\intranet_101">
+  Options Indexes FollowSymLinks Includes ExecCGI
+  AllowOverride All
+  Require all granted
+ </Directory>
+   SSLEngine on
+   SSLCertificateFile "C:/web/apache/conf/certificados/intranet.crt"
+   SSLCertificateKeyFile "C:/web/apache/conf/certificados/intranet.key"
+</VirtualHost>
