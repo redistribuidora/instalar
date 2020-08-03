@@ -1,13 +1,43 @@
-wget https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/7.4.5/xampp-linux-x64-7.4.5-0-installer.run
-chmod 755 xampp-linux-x64-7.4.5-0-installer.run
-ls -l xampp-linux-x64-7.4.5-0-installer.run
-sudo ./xampp-linux-x64-7.4.5-0-installer.run
+wget https://sourceforge.net/projects/xampp/files/XAMPP%20Linux/7.4.8/xampp-linux-x64-7.4.8-0-installer.run/download
+
+chmod 755 xampp-linux-x64-7.4.8-0-installer.run
+
+sudo ./xampp-linux-x64-7.4.8-0-installer.run
+
 sudo /opt/lampp/lampp start
-sudo /opt/lampp/lampp stop
-sudo /opt/lampp/lampp restart
-http://localhost/xampp/
+
 sudo nano /etc/rc.local
 /opt/lampp/lampp start
 ctrl+0
 ctrl+x
+
 sudo /opt/lampp/lampp security
+
+mkdir ssl
+
+cd ssl
+
+sudo openssl genrsa -des3 -out localRootCA.key 2048
+
+sudo openssl req -x509 -new -nodes -key localRootCA.key -sha256 -days 1024 -out localRootCA.pem
+
+sudo openssl req -new -nodes -out server.csr -newkey rsa:2048 -keyout server.key
+
+nano x509v3.ext
+authorityKeyIdentifier = keyid, issuer
+basicConstraints = CA: FALSE
+keyUsage = digitalSignature, nonRepudiation, keyEncipherment, dataEncipherment
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = localhost
+
+sudo openssl x509 -req -in server.csr -CA localRootCA.pem -CAkey localRootCA.key -CAcreateserial -out server.crt -days 500 -sha256 -extfile x509v3.ext
+
+sudo cp server.crt /opt/lampp/etc/ssl.crt/
+
+sudo cp server.key /opt/lampp/etc/ssl.key/
+
+chrome://settings/certificates
+localhostRootCA.pem
+
+sudo /opt/lampp/lampp restart
