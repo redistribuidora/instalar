@@ -1,0 +1,163 @@
+/*** COMUN ***/
+sudo apt update
+# sudo adduser apache
+# sudo adduser mysql
+
+hostname
+hostname -I
+sudo nano /etc/hostname
+sudo nano /etc/hosts
+sudo reboot
+hostnamectl
+
+curl http://icanhazip.com
+ip a
+w --ip-addr
+
+/*** COMUN - IP ***/
+sudo nano /etc/netplan/00-installer-config.yaml
+[<]
+network:
+  ethernets:
+    eth0:
+      addresses:
+      - 192.168.1.100/24
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+        - 8.8.8.8
+        - 8.8.4.4
+  version: 2
+[>]
+sudo netplan apply
+sudo netplan --debug apply
+
+/*** COMUN - SSH ***/
+sudo apt install openssh-server
+systemctl status sshd
+sudo ufw allow ssh
+sudo ufw enable
+sudo ufw status verbose
+# sudo nano /etc/ssh/sshd_config
+
+/*** APACHE SERVER ***/
+sudo apt install apache2
+sudo nano /etc/apache2/apache2.conf
+[<]
+ServerName intranet.local
+[>]
+sudo systemctl reload apache2
+sudo ufw allow in "Apache"
+sudo ufw allow http
+sudo ufw allow https
+sudo ufw enable
+sudo ufw status verbose
+sudo ufw app list
+apachectl -v
+
+sudo apt install php libapache2-mod-php php-mysql
+php -v
+
+sudo mkdir /var/www/intranet
+sudo chown -R $USER>$USER /var/www/intranet/
+sudo chmod -R 777 /var/www/
+
+sudo nano /etc/apache2/sites-available/intranet.conf
+[<]
+<VirtualHost *:80>
+    ServerName intranet.local
+    ServerAlias www.intranet.local
+    ServerAdmin oscarvillegasdelrior@gmail.com
+    DocumentRoot /var/www/intranet/public_html
+    <Directory /var/www/intranet/public_html>
+        Options -Indexes +FollowSymLinks
+        AllowOverride All
+    </Directory>
+    ErrorLog ${APACHE_LOG_DIR}/intranet-error.log
+    CustomLog ${APACHE_LOG_DIR}/intranet-access.log combined
+</VirtualHost>
+[>]
+sudo systemctl reload apache2
+sudo a2enmod rewrite
+sudo service apache2 restart
+sudo a2enmod ssl
+sudo a2ensite intranet.conf
+sudo a2dissite 000-default.conf
+sudo systemctl reload apache2
+sudo systemctl restart apache2
+sudo apache2ctl configtest
+
+nano /var/www/intranet/index.html
+nano /var/www/intranet/info.php
+
+sudo apt install mysql-client
+mysql -V
+mysql -u intranet -h 192.168.1.91 -p
+
+sudo apt install zip unzip
+unzip assets.zip
+
+sudo apt install nfs-common
+sudo mkdir -p /mnt/cloud/
+sudo chmod 777 /mnt/cloud/
+sudo mount 192.168.1.81:/var/cloud  /mnt/cloud
+df -h
+sudo umount /mnt/cloud
+sudo nano /etc/fstab
+[<]
+192.168.1.81:/var/cloud /mnt/cloud      nfs     defaults        0       0
+[>]
+mount /mnt/cloud
+
+/*** MYSQL SERVER ***/
+sudo apt install mysql-client
+mysql -V
+sudo apt install mysql-server
+sudo mysql_secure_installation
+sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+[<]
+bind-address = 0.0.0.0
+[>]
+sudo systemctl enable mysql
+sudo systemctl status mysql
+sudo systemctl restart mysql
+ss -ltn
+# sudo ufw allow from any to any port 3306 proto tcp
+sudo ufw allow from 192.168.1.100 to any port 3306
+sudo ufw enable
+sudo ufw status
+
+/*** NAS SERVER ***/
+sudo apt install nfs-kernel-server
+sudo mkdir -p /var/cloud
+sudo chown -R nobody:nogroup /var/cloud/
+sudo chmod 777 /var/cloud/
+sudo nano /etc/exports
+[<]
+/var/cloud 192.168.1.0/24(rw,no_subtree_check,sync)
+#/var/apache 192.168.1.100(rw,no_subtree_check,async)
+#/var/mysql 192.168.1.91(rw,no_subtree_check,async)
+[>]
+sudo exportfs -arv
+sudo systemctl enable nfs-kernel-server
+sudo systemctl start nfs-kernel-server
+sudo systemctl status nfs-kernel-server
+sudo systemctl restart nfs-kernel-server
+sudo ufw allow from 192.168.1.0/24 to any port nfs
+sudo ufw enable
+sudo ufw status
+df -h
+
+/*** COMUN ***/
+sudo shutdown
+
+/*** FUENTES ***/
+https://www.digitalocean.com/community/tutorials/how-to-install-linux-apache-mysql-php-lamp-stack-on-ubuntu-20-04-es
+https://medium.com/@greyes/habilitar-apache2-mod-rewrite-en-ubuntu-18-04-lts-2181f89f7d94
+https://www.it-swarm.dev/es/mysql/como-cambiar-el-directorio-de-datos-de-mysql/969001220/
+https://www.youtube.com/watch?v=08cKPw4ikeM
+https://www.atareao.es/software/utilidades/compartir-directorios-red-local/
+https://www.tecmint.com/install-nfs-server-on-ubuntu/
+https://www.digitalocean.com/community/tutorials/how-to-set-up-an-nfs-mount-on-ubuntu-20-04-es
+https://linuxize.com/post/how-to-mount-an-nfs-share-in-linux/
+
