@@ -60,7 +60,9 @@ php -v
 
 sudo mkdir /var/www/intranet
 sudo chown -R $USER>$USER /var/www/intranet/
-sudo chmod -R 777 /var/www/
+sudo chmod -R 777 /var/www/intranet/
+sudo chgrp -R www-data /var/www/intranet/
+sudo usermod -a -G www-data oscar
 
 sudo nano /etc/apache2/sites-available/intranet.conf
 [<]
@@ -100,6 +102,9 @@ unzip assets.zip
 sudo apt install nfs-common
 sudo mkdir -p /mnt/cloud/
 sudo chmod 777 /mnt/cloud/
+sudo chgrp -R www-data /mnt/cloud/
+sudo usermod -a -G www-data oscar
+
 sudo mount 192.168.1.81:/var/cloud  /mnt/cloud
 df -h
 sudo umount /mnt/cloud
