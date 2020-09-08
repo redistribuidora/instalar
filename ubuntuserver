@@ -1,5 +1,9 @@
+/** ERRORES **/
+sudo touch /etc/cloud/cloud-init.disabled
+
 /*** COMUN ***/
 sudo apt update
+sudo apt upgrade
 # sudo adduser apache
 # sudo adduser mysql
 
