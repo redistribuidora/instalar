@@ -1,6 +1,6 @@
 /** ERRORES **/
 sudo touch /etc/cloud/cloud-init.disabled
-
+/--------------------------------------------------/
 /*** COMUN ***/
 sudo apt update
 sudo apt upgrade
@@ -17,8 +17,9 @@ hostnamectl
 curl http://icanhazip.com
 ip a
 w --ip-addr
-
-/*** COMUN - IP ***/
+sudo shutdown
+/--------------------------------------------------/
+/*** IP ***/
 sudo nano /etc/netplan/00-installer-config.yaml
 [<]
 network:
@@ -35,15 +36,15 @@ network:
 [>]
 sudo netplan apply
 sudo netplan --debug apply
-
-/*** COMUN - SSH ***/
+/--------------------------------------------------/
+/*** SSH ***/
 sudo apt install openssh-server
 systemctl status sshd
 sudo ufw allow ssh
 sudo ufw enable
 sudo ufw status verbose
 # sudo nano /etc/ssh/sshd_config
-
+/--------------------------------------------------/
 /*** APACHE SERVER ***/
 sudo apt install apache2
 sudo nano /etc/apache2/apache2.conf
@@ -58,26 +59,24 @@ sudo ufw enable
 sudo ufw status verbose
 sudo ufw app list
 apachectl -v
-
 sudo apt install php libapache2-mod-php php-mysql
 php -v
-
 sudo mkdir /var/www/intranet
 sudo chown -R $USER>$USER /var/www/intranet/
 sudo chmod -R 777 /var/www/intranet/
 sudo chgrp -R www-data /var/www/intranet/
 sudo usermod -a -G www-data oscar
-
 sudo nano /etc/apache2/sites-available/intranet.conf
 [<]
 <VirtualHost *:80>
     ServerName intranet.local
     ServerAlias www.intranet.local
     ServerAdmin oscarvillegasdelrior@gmail.com
-    DocumentRoot /var/www/intranet/public_html
-    <Directory /var/www/intranet/public_html>
-        Options -Indexes +FollowSymLinks
-        AllowOverride All
+    DocumentRoot /mnt/nas/intranet/public_html
+    <Directory /mnt/nas/intranet/public_html>
+        Options None
+        AllowOverride None
+        Require all granted
     </Directory>
     ErrorLog ${APACHE_LOG_DIR}/intranet-error.log
     CustomLog ${APACHE_LOG_DIR}/intranet-access.log combined
@@ -98,26 +97,26 @@ nano /var/www/intranet/info.php
 
 sudo apt install mysql-client
 mysql -V
-mysql -u intranet -h 192.168.1.91 -p
+mysql -u intranet -h 192.168.1.120 -p
 
 sudo apt install zip unzip
 unzip assets.zip
 
 sudo apt install nfs-common
-sudo mkdir -p /mnt/cloud/
-sudo chmod 777 /mnt/cloud/
-sudo chgrp -R www-data /mnt/cloud/
+sudo mkdir -p /mnt/nas/
+sudo chmod 777 /mnt/nas/
+sudo chgrp -R www-data /mnt/nas/
 sudo usermod -a -G www-data oscar
 
-sudo mount 192.168.1.81:/var/cloud  /mnt/cloud
+sudo mount 192.168.1.81:/var/nas  /mnt/nas
 df -h
-sudo umount /mnt/cloud
+sudo umount /mnt/nas
 sudo nano /etc/fstab
 [<]
-192.168.1.81:/var/cloud /mnt/cloud      nfs     defaults        0       0
+192.168.1.81:/var/nas /mnt/nas      nfs     defaults        0       0
 [>]
-mount /mnt/cloud
-
+mount /mnt/nas
+/--------------------------------------------------/
 /*** MYSQL SERVER ***/
 sudo apt install mysql-client
 mysql -V
@@ -131,21 +130,28 @@ sudo systemctl enable mysql
 sudo systemctl status mysql
 sudo systemctl restart mysql
 ss -ltn
-# sudo ufw allow from any to any port 3306 proto tcp
-sudo ufw allow from 192.168.1.100 to any port 3306
+sudo ufw allow from any to any port 3306 proto tcp
+# sudo ufw allow from 192.168.1.100 to any port 3306
 sudo ufw enable
 sudo ufw status
-
+sudo mysql
+CREATE DATABASE intranet;
+CREATE USER 'intranet'@'%' IDENTIFIED BY 'password';
+GRANT ALL PRIVILEGES ON intranet.* TO 'intranet'@'%';
+FLUSH PRIVILEGES;
+SELECT user,authentication_string,plugin,host FROM mysql.user;
+exit
+/--------------------------------------------------/
 /*** NAS SERVER ***/
 sudo apt install nfs-kernel-server
-sudo mkdir -p /var/cloud
-sudo chown -R nobody:nogroup /var/cloud/
-sudo chmod 777 /var/cloud/
+sudo mkdir -p /var/nas
+sudo chown -R nobody:nogroup /var/nas/
+sudo chmod 777 /var/nas/
 sudo nano /etc/exports
 [<]
-/var/cloud 192.168.1.0/24(rw,no_subtree_check,sync)
-#/var/apache 192.168.1.100(rw,no_subtree_check,async)
-#/var/mysql 192.168.1.91(rw,no_subtree_check,async)
+/var/nas 192.168.1.0/24(rw,no_subtree_check,sync)
+# /var/apache 192.168.1.110(rw,no_subtree_check,async)
+# /var/mysql 192.168.1.120(rw,no_subtree_check,async)
 [>]
 sudo exportfs -arv
 sudo systemctl enable nfs-kernel-server
@@ -158,8 +164,7 @@ sudo ufw status
 df -h
 
 /*** COMUN ***/
-sudo shutdown
-
+/--------------------------------------------------/
 /*** FUENTES ***/
 https://www.digitalocean.com/community/tutorials/how-to-install-linux-apache-mysql-php-lamp-stack-on-ubuntu-20-04-es
 https://medium.com/@greyes/habilitar-apache2-mod-rewrite-en-ubuntu-18-04-lts-2181f89f7d94
