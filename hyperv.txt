@@ -10,5 +10,5 @@ powershell (admin)
 Get-NetConnectionProfile (Obtener número de InterfaceIndex: Ej.4)
 Set-NetConnectionProfile -InterfaceIndex 4 -NetworkCategory Private
 winrm quickconfig (y,y)
-winrm %  winrm/config/client '@{TrustedHosts="192.168.1.100"}'
+winrm s winrm/config/client '@{TrustedHosts="192.168.1.100"}'
 cmdkey /add:192.168.1.100 /user:Administrador /pass
