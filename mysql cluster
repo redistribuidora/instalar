@@ -1,0 +1,125 @@
+(db1,db2,db3):
+sudo apt -y install mysql-server mysql-client
+sudo mysql_secure_installation
+
+---> REPLICATION
+
+(db1):
+sudo mysql -u root -p
+mysql> SELECT UUID(); (guardar valor: 00000000-1111-2222-3333-444444444444)
+mysql> exit
+
+(db1, db2, db3):
+sudo nano /etc/mysql/my.cnf
+[mysqld]
+server_id=1 
+bind-address=0.0.0.0
+gtid_mode=ON 
+enforce_gtid_consistency=ON
+binlog_checksum=NONE
+plugin_load_add='group_replication.so'
+group_replication_single_primary_mode=OFF
+loose-group_replication_group_name="00000000-1111-2222-3333-444444444444"
+loose-group_replication_start_on_boot=OFF
+loose-group_replication_local_address= "192.168.1.121:33061"
+loose-group_replication_group_seeds="192.168.1.121:33061, 192.168.1.122:33061, 192.168.1.123:33061"
+loose-group_replication_bootstrap_group=OFF
+report_host=192.168.1.121
+
+sudo service mysql restart
+
+sudo mysql -u root -p
+mysql> SET SQL_LOG_BIN=0;
+mysql> CREATE USER 'replication_user'@'%' IDENTIFIED WITH mysql_native_password BY 'PASSWORD';
+mysql> GRANT REPLICATION SLAVE ON *.* TO 'replication_user'@'%';
+mysql> FLUSH PRIVILEGES;
+mysql> SET SQL_LOG_BIN=1;
+mysql> CHANGE MASTER TO MASTER_USER='replication_user', MASTER_PASSWORD='PASSWORD' FOR CHANNEL 'group_replication_recovery';
+
+(db1):
+mysql> SET GLOBAL group_replication_bootstrap_group=ON;
+mysql> START GROUP_REPLICATION;
+mysql> SET GLOBAL group_replication_bootstrap_group=OFF;
+mysql> SELECT MEMBER_ID, MEMBER_HOST, MEMBER_STATE FROM performance_schema.replication_group_members;
+
+(db2, db3):
+mysql> START GROUP_REPLICATION;
+mysql> SELECT MEMBER_ID, MEMBER_HOST, MEMBER_STATE FROM performance_schema.replication_group_members;
+
+---> HAProxy
+
+sudo apt -y install haproxy
+sudo cp -p /etc/haproxy/haproxy.cfg /etc/haproxy/haproxy.cfg.orig
+
+sudo nano /etc/haproxy/haproxy.cfg
+listen stats
+    bind 192.168.1.120:7000
+    stats enable
+    stats hide-version
+    stats uri /
+    stats auth admin:password
+listen mysql-cluster
+    bind 192.168.1.120:3306
+    mode tcp
+    option mysql-check user haproxy_check
+    balance roundrobin
+    server dbserver1 192.168.1.121:3306 check
+    server dbserver2 192.168.1.122:3306 check
+    server dbserver3 192.168.1.123:3306 check
+
+sudo mysql -u root -p
+mysql> create user 'haproxy_check'@'%';
+mysql> flush privileges;
+mysql> create user 'haproxy_root'@'%' identified by 'password';
+mysql> grant all privileges on *.* to 'haproxy_root'@'%';
+mysql> select user, Host FROM mysql.user;
+
+sudo nano /etc/sysctl.conf
+net.ipv4.ip_nonlocal_bind=1
+
+sudo sysctl -p
+sudo systemctl restart haproxy
+sudo netstat -ntlp
+
+---> HeartBeat
+
+(db1, db2, db3):
+sudo apt -y install heartbeat
+
+sudo nano /etc/ha.d/authkeys
+auth 1
+1 md5 password
+
+sudo chmod 600 /etc/ha.d/authkeys
+
+sudo nano /etc/ha.d/ha.cf
+keepalive 2
+deadtime 10
+udpport        694
+bcast  ens33
+mcast ens33 225.0.0.1 694 1 0
+ucast ens33 192.168.1.122
+ucast ens33 192.168.1.123
+udp     ens33
+logfacility     local0
+node    dbserver1
+node    dbserver2
+node    dbserver3
+
+sudo nano /etc/ha.d/haresources
+dbserver1 192.168.1.121
+
+sudo systemctl restart heartbeat
+
+ip addr show
+
+mysql -h 192.168.1.120 -u haproxy_root -p -e "show variables like 'server_id'"
+
+http://192.168.1.120:7000
+
+
+FUENTES:
+https://www.techsupportpk.com/2020/03/how-to-set-up-multi-node-mysql-replication-cluster-ubuntu.html
+https://www.vultr.com/docs/configure-mysql-group-replication-on-ubuntu-20-04
+https://www.howtoforge.com/tutorial/how-to-install-a-mysql-cluster-on-ubuntu-16-04/
+https://hostadvice.com/how-to/how-to-create-high-availability-with-mysql-replication-on-a-ubuntu-18-04-vps-or-dedicated-server/
