@@ -22,3 +22,5 @@ server {
   #max_execution_time=259200;
  }
 }
+
+sudo systemctl reload nginx
