@@ -1,0 +1,64 @@
+sudo apt-get install nginx
+
+cd /etc/nginx/sites-available
+sudo cp default intranet.dev
+sudo nano intranet.dev
+[<]
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        # listen 443 ssl default_server;
+        # listen [::]:443 ssl default_server;
+        root /var/www/intranet;
+        index index.php index.html index.htm index.nginx-debian.html;
+        server_name intranet.dev;
+        location / {
+                try_files $uri $uri/ =404;
+        }
+        location ~ \.php$ {
+                include snippets/fastcgi-php.conf;
+                fastcgi_pass unix:/var/run/php/php7.4-fpm.sock;
+        }
+        location ~ /\.ht {
+                deny all;
+        }
+}
+[>]
+
+cd /etc/nginx/sites-enabled
+sudo ln -s ../sites-available/intranet.dev .
+
+sudo nginx -t
+sudo nginx -s reload
+sudo tail -f /var/log/nginx/error.log
+
+sudo mkdir /var/www/intranet
+sudo chmod -R 777 /var/www/intranet/
+sudo chown $USER -R /var/www/intranet/
+sudo chgrp $USER -R /var/www/intranet/
+
+sudo nano /var/www/intranet/index.html
+[<]
+Hola Intranet
+[>]
+
+sudo apt-get install php-fpm
+sudo nano /var/www/intranet/info.php
+[<]
+<?php
+phpinfo();
+?>
+[>]
+
+sudo apt-get install mysql-server php-mysql
+sudo mysqladmin --user=root password "mypassword"
+sudo mysql -u root -p
+CREATE USER 'intranet'@'localhost' IDENTIFIED BY 'mypassword';
+GRANT ALL PRIVILEGES ON *.* TO 'intranet'@'localhost' WITH GRANT OPTION;
+
+sudo cd /var/www/intranet
+wget https://files.phpmyadmin.net/phpMyAdmin/5.0.4/phpMyAdmin-5.0.4-all-languages.zip
+
+sudo apt-get install unzip
+sudo unzip phpMyAdmin-5.0.4-all-languages.zip
+sudo mv phpMyAdmin-5.0.4-all-languages phpmyadmin
