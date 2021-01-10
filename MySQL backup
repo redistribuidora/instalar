@@ -1,0 +1,12 @@
+#!/bin/bash
+user="usuario"
+password="clave"
+host="localhost"
+db_name="test"
+backup_path="/ruta"
+date=$(date +"%d-%b-%Y")
+umask 177
+mysqldump --user=$user --password=$password --host=$host $db_name > $backup_path/$db_name-$date.sql
+tar -czvf $backup_path/$db_name-$date.sql.tar.gz $backup_path/$db_name-$date.sql
+rm $backup_path/$db_name-$date.sql
+find $backup_path/* -mtime +7 -exec rm {} 
