@@ -1,0 +1,8 @@
+// LOCAL
+ssh usu_server@ip_server
+
+// SERVER
+ssh -R [pto_tunel]:localhost:22 usu_client@ip_client -p[pto_client]
+
+// CLIENT
+ssh usu_client@localhost -p[pto_tunel]
